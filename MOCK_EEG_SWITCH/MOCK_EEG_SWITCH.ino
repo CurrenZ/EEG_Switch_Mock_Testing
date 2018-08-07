@@ -1,8 +1,6 @@
 #include <Biquad.h>
 
 // pins
-#define DATA 3
-#define SERIAL_AVAILABLE 2
 #define RELAY_PIN 11
 
 #define RELAY_HOLD_TIME 1         // in second(s)
@@ -21,14 +19,13 @@
 #define NUM_CHANNEL 1    // number of signals needed from the brains
 #define SAMPLE_RATE 250  // sampling rate used by OpenBCI
 
-int dataIndicator = LOW;
-int serialIndicator = LOW;
+// for Serial Read
+int rawSerial;
+int rawData=0;
 
+// for frequency detection
 bool frequencyMatch = false;
-
-String SerialStr = "";
-
-float channelPhase[SAMPLE_RATE] = {0};    // 2d array to store channel data
+float channelPhase[SAMPLE_RATE] = {};    // 2d array to store channel data
 
 Biquad stopDC_filter = Biquad(bq_type_highpass, HP_CUTOFF / SAMPLE_RATE, FILTER_Q, PEAK_GAIN_DB);
 Biquad notch_filter = Biquad(bq_type_notch, NOTCH_FREQ / SAMPLE_RATE, NOTCH_Q, PEAK_GAIN_DB);
@@ -36,58 +33,59 @@ Biquad AHP_bandpass_filter = Biquad(bq_type_bandpass, TARGET_FREQUENCY / SAMPLE_
 //stopDC_filter.calcBiquad();
 //notch_filter.calcBiquad();
 //AHP_bandpass_filter.calcBiquad();
+ 
+void setup() {
+  Serial.begin(115200);
 
-void setup(){
-	Serial.begin(115200);
-
-	pinMode(DATA, OUTPUT);
-  pinMode(SERIAL_AVAILABLE, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
   
-	// initiating indicator for about 2 second
-	for (int i = 0; i < 15; i ++){
-		digitalWrite(DATA, HIGH);
-    digitalWrite(SERIAL_AVAILABLE, LOW);
+  // initiating indicator for about 2 second
+  for (int i = 0; i < 20; i ++){
     digitalWrite(RELAY_PIN, LOW);
-		delay(30);
-		digitalWrite(DATA, LOW);
-    digitalWrite(SERIAL_AVAILABLE, HIGH);
-    digitalWrite(RELAY_PIN, LOW);
-    delay(30);
-    digitalWrite(DATA, LOW);
-    digitalWrite(SERIAL_AVAILABLE, LOW);
+    delay(50);
     digitalWrite(RELAY_PIN, HIGH);
-    delay(30);
-	}
- digitalWrite(DATA, LOW);
+    delay(50);
+  }
  digitalWrite(RELAY_PIN, LOW);
- digitalWrite(SERIAL_AVAILABLE, LOW);
 }
-
-void loop(){
-  for (int i = 0; i < SAMPLE_RATE; i ++){
-    if (Serial.available()){
-      smartDigitalWrite(SERIAL_AVAILABLE, HIGH, &serialIndicator);
-      SerialStr = Serial.readString();
-      float temp = 0.0f;
-      if (SerialStr == "e"){
-        Serial.println(temp);
-      }
-      else{
-        temp = SerialStr.toFloat();
-        channelPhase[i] = temp;
-      }
-      if (channelPhase[i] > 0.0){
-        smartDigitalWrite(DATA, HIGH, &dataIndicator);
-      } 
-      else{
-        smartDigitalWrite(DATA, LOW, &dataIndicator);
-      }
+ 
+void loop() {
+  // read serial-data, if available
+  for (int i = 0; i < SAMPLE_RATE; i++){
+    if (Serial.available()) {
+      myRead(&rawSerial, &rawData, &channelPhase[i]);
     }
-    else smartDigitalWrite(SERIAL_AVAILABLE, LOW, &serialIndicator);
   }
   if (frequencyMatched()){
-    turnRelayOn();
+    digitalWrite(RELAY_PIN, HIGH);
+    delay(2000);
+  }
+}
+
+void myRead(int *rS, int *rD, float *channelData){
+  *rS = Serial.read();
+  // handle digits
+  if ((*rS >= '0') && (*rS <= '9')) {
+    *rD = 10 * *rD + *rS - '0';
+  }
+  // handle delimiter
+  else{
+    if (*rS == 'n'){
+      *rD *= -1;
+    }
+    if (*rD !=0){
+      //Serial.println(*rD);
+      *channelData = *rD/100.0;
+      Serial.println(*channelData * 100);
+    } 
+    *rD = 0;
+  }
+}
+
+void smartDigitalWrite(int pin, int targetStatus, int *currentStatus){
+  if (targetStatus != *currentStatus){
+    digitalWrite(pin, targetStatus);
+    *currentStatus = targetStatus;
   }
 }
 
@@ -107,17 +105,4 @@ bool frequencyMatched(){
   }
   result = (EEGuv > CHANNEL_LOW);
   return result;
-}
-
-void turnRelayOn(){
-  digitalWrite(RELAY_PIN, HIGH);
-//  delay(RELAY_HOLD_TIME * 1000);
-//  digitalWrite(RELAY_PIN, LOW);
-}
-
-void smartDigitalWrite(int pin, int targetStatus, int *currentStatus){
-  if (targetStatus != *currentStatus){
-    digitalWrite(pin, targetStatus);
-    *currentStatus = targetStatus;
-  }
 }

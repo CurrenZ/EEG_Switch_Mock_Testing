@@ -11,35 +11,36 @@ String dataList[] = new String[9];
 
 BufferedReader myReader;
 String myLine;
-
-
-void setup(){
-	mySerial = new Serial(this, PORT, BAUDRATE);
-	//mySerial.bufferUntil('\n');
-
-	myReader = createReader(FILE_PATH);
+ 
+ 
+void setup() {
+  mySerial = new Serial(this, PORT, BAUDRATE);
+  myReader = createReader(FILE_PATH);
 }
-
-void draw(){
-	if (readDataLine()){
-		//dataList = split(myLine, ',');
-  //  String dataStr = dataList[1];
-		//println(myLine);
-		mySerial.write(myLine);
-    mySerial.write("e");
-	}
+ 
+void draw() {
+  if (readDataLine()){
+    float lineFloat = float(myLine);
+    float temp = lineFloat * 100;
+    int tempInt = (int)temp;
+    ///println("now sending number: "+lineFloat);
+    mySerial.write(Integer.toString(tempInt));
+    // write any charcter that marks the end of a number
+    if (lineFloat >= 0) mySerial.write('p');
+    else if (lineFloat <0) mySerial.write('n');
+  }
 }
 
 boolean readDataLine(){
-	try{
-		myLine = myReader.readLine();
-	}catch(IOException e){
-		e.printStackTrace();
-		myLine = null;
-	}
-	return !(myLine == null);
+  try{
+    myLine = myReader.readLine();
+  }catch(IOException e){
+    e.printStackTrace();
+    myLine = null;
+  }
+  return !(myLine == null);
 }
-
+ 
 // this part is executed, when serial-data is received
 void serialEvent(Serial p) {
   try {
@@ -47,7 +48,10 @@ void serialEvent(Serial p) {
     String message = p.readStringUntil(13);
     // just if there is data
     if (message != null) {
-      println("message received: "+trim(message));
+      message = trim(message);
+      float messageFloat = float(message);
+      messageFloat /=100;
+      println("message received: "+messageFloat);
     }
   }
   catch (Exception e) {
