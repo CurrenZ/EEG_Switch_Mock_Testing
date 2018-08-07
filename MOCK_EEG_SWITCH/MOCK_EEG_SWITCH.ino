@@ -15,23 +15,25 @@
 #define MICROVOLTS_PER_COUNT 0.02235174f  //
 #define HP_CUTOFF 0.5f            // 
 #define NOTCH_FREQ 60.0f          // power line frequency
-#define TARGET_FREQUENCY 9.0f         // the frequency that to be detected
+#define TARGET_FREQUENCY 25.0f         // the frequency that to be detected
 #define CHANNEL_LOW 5.0f          // when then activity in such channel is low
 
 #define NUM_CHANNEL 1    // number of signals needed from the brains
 #define SAMPLE_RATE 250  // sampling rate used by OpenBCI
 
+int dataIndicator = LOW;
+int serialIndicator = LOW;
+
 bool frequencyMatch = false;
 
 String SerialStr = "";
 
-float channelPhase[SAMPLE_RATE] = {};    // 2d array to store channel data
+float channelPhase[SAMPLE_RATE] = {0};    // 2d array to store channel data
 
 Biquad stopDC_filter = Biquad(bq_type_highpass, HP_CUTOFF / SAMPLE_RATE, FILTER_Q, PEAK_GAIN_DB);
 Biquad notch_filter = Biquad(bq_type_notch, NOTCH_FREQ / SAMPLE_RATE, NOTCH_Q, PEAK_GAIN_DB);
 Biquad AHP_bandpass_filter = Biquad(bq_type_bandpass, TARGET_FREQUENCY / SAMPLE_RATE, BP_Q, PEAK_GAIN_DB);
-stopDC_filter.setFc(5.5);
-//stopDC_filter::calcBiquad();
+//stopDC_filter.calcBiquad();
 //notch_filter.calcBiquad();
 //AHP_bandpass_filter.calcBiquad();
 
@@ -42,39 +44,56 @@ void setup(){
   pinMode(SERIAL_AVAILABLE, OUTPUT);
   pinMode(RELAY_PIN, OUTPUT);
   
-	// initiating indicator for 2 second
-	for (int i = 0; i < 20; i ++){
+	// initiating indicator for about 2 second
+	for (int i = 0; i < 15; i ++){
 		digitalWrite(DATA, HIGH);
     digitalWrite(SERIAL_AVAILABLE, LOW);
-		delay(50);
+    digitalWrite(RELAY_PIN, LOW);
+		delay(30);
 		digitalWrite(DATA, LOW);
     digitalWrite(SERIAL_AVAILABLE, HIGH);
-		delay(50);
+    digitalWrite(RELAY_PIN, LOW);
+    delay(30);
+    digitalWrite(DATA, LOW);
+    digitalWrite(SERIAL_AVAILABLE, LOW);
+    digitalWrite(RELAY_PIN, HIGH);
+    delay(30);
 	}
+ digitalWrite(DATA, LOW);
+ digitalWrite(RELAY_PIN, LOW);
+ digitalWrite(SERIAL_AVAILABLE, LOW);
 }
 
 void loop(){
   for (int i = 0; i < SAMPLE_RATE; i ++){
     if (Serial.available()){
-      digitalWrite(SERIAL_AVAILABLE, HIGH);
+      smartDigitalWrite(SERIAL_AVAILABLE, HIGH, &serialIndicator);
       SerialStr = Serial.readString();
-      channelPhase[i] = SerialStr.toFloat();
+      float temp = 0.0f;
+      if (SerialStr == "e"){
+        Serial.println(temp);
+      }
+      else{
+        temp = SerialStr.toFloat();
+        channelPhase[i] = temp;
+      }
       if (channelPhase[i] > 0.0){
-        digitalWrite(DATA, HIGH);
+        smartDigitalWrite(DATA, HIGH, &dataIndicator);
       } 
       else{
-        digitalWrite(DATA, LOW);
+        smartDigitalWrite(DATA, LOW, &dataIndicator);
       }
     }
-    else digitalWrite(SERIAL_AVAILABLE, LOW);
-    
-    if (frequencyMatched()) turnRelayOn();
-    else digitalWrite(RELAY_PIN, LOW);
+    else smartDigitalWrite(SERIAL_AVAILABLE, LOW, &serialIndicator);
+  }
+  if (frequencyMatched()){
+    turnRelayOn();
   }
 }
 
 bool frequencyMatched(){
-  float EEGuv;
+  bool result = false;
+  float EEGuv = 0.0;
   for (int i = 0; i < SAMPLE_RATE; i++){
     float channelVal = 0.0f;
     float channelSum = 0.0f;
@@ -86,11 +105,19 @@ bool frequencyMatched(){
     channelSum += channelVal * channelVal;                        // scaling the data
     EEGuv = (sqrt(abs(channelSum / SAMPLE_RATE)) * MICROVOLTS_PER_COUNT);
   }
-  return (EEGuv > CHANNEL_LOW);
+  result = (EEGuv > CHANNEL_LOW);
+  return result;
 }
 
 void turnRelayOn(){
   digitalWrite(RELAY_PIN, HIGH);
-  delay(RELAY_HOLD_TIME * 1000);
-  digitalWrite(RELAY_PIN, LOW);
+//  delay(RELAY_HOLD_TIME * 1000);
+//  digitalWrite(RELAY_PIN, LOW);
+}
+
+void smartDigitalWrite(int pin, int targetStatus, int *currentStatus){
+  if (targetStatus != *currentStatus){
+    digitalWrite(pin, targetStatus);
+    *currentStatus = targetStatus;
+  }
 }

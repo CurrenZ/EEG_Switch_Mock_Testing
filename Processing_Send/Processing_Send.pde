@@ -5,7 +5,7 @@ Serial mySerial;
 final String PORT = "COM5";
 final int BAUDRATE = 115200;
 
-final String FILE_PATH = "C:/Fake_Data_Test/meditation_data.txt";
+final String FILE_PATH = "C:/Fake_Data_Test/fakeSignal.txt";
 
 String dataList[] = new String[9];
 
@@ -22,10 +22,11 @@ void setup(){
 
 void draw(){
 	if (readDataLine()){
-		dataList = split(myLine, ',');
-    String dataStr = dataList[1];
-		println(dataStr);
-		mySerial.write(dataStr);
+		//dataList = split(myLine, ',');
+  //  String dataStr = dataList[1];
+		//println(myLine);
+		mySerial.write(myLine);
+    mySerial.write("e");
 	}
 }
 
