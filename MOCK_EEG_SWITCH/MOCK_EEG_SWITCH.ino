@@ -53,14 +53,9 @@ void setup() {
 }
  
 void loop() {
-  // read serial-data, if available
-//  for (int i = 0; i < SAMPLE_RATE; i++){
-//    if (Serial.available()) {
-//      myRead(&rawSerial, &rawData, &channelPhase[i]);
-//    }
-//  }
   int dataCnt = 0;
   while(dataCnt < SAMPLE_RATE){
+    // read serial-data, if available
     if (Serial.available()) {
       myRead(&rawSerial, &rawData, &channelPhase[dataCnt]);
       dataCnt ++;
