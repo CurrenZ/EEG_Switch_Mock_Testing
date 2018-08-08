@@ -19,6 +19,9 @@
 #define NUM_CHANNEL 1    // number of signals needed from the brains
 #define SAMPLE_RATE 250  // sampling rate used by OpenBCI
 
+// for Serial Communication
+#define DECIMALS 10000.0f
+
 // for Serial Read
 int rawSerial;
 int rawData=0;
@@ -51,9 +54,16 @@ void setup() {
  
 void loop() {
   // read serial-data, if available
-  for (int i = 0; i < SAMPLE_RATE; i++){
+//  for (int i = 0; i < SAMPLE_RATE; i++){
+//    if (Serial.available()) {
+//      myRead(&rawSerial, &rawData, &channelPhase[i]);
+//    }
+//  }
+  int dataCnt = 0;
+  while(dataCnt < SAMPLE_RATE){
     if (Serial.available()) {
-      myRead(&rawSerial, &rawData, &channelPhase[i]);
+      myRead(&rawSerial, &rawData, &channelPhase[dataCnt]);
+      dataCnt ++;
     }
   }
   if (frequencyMatched()){
@@ -75,8 +85,8 @@ void myRead(int *rS, int *rD, float *channelData){
     }
     if (*rD !=0){
       //Serial.println(*rD);
-      *channelData = *rD/100.0;
-      Serial.println(*channelData * 100);
+      *channelData = *rD/DECIMALS;
+      //Serial.println(*channelData * DECIMALS);
     } 
     *rD = 0;
   }
@@ -92,17 +102,19 @@ void smartDigitalWrite(int pin, int targetStatus, int *currentStatus){
 bool frequencyMatched(){
   bool result = false;
   float EEGuv = 0.0;
+  float channelVal = 0.0f;
+  float channelSum = 0.0f;
   for (int i = 0; i < SAMPLE_RATE; i++){
-    float channelVal = 0.0f;
-    float channelSum = 0.0f;
     channelVal = channelPhase[i];
     // recursive functions
     channelVal = stopDC_filter.process(stopDC_filter.process(channelVal));        // applying DC-blocking filter
     channelVal = notch_filter.process(notch_filter.process(channelVal));        // applying 60Hz notch filter
     channelVal = AHP_bandpass_filter.process(AHP_bandpass_filter.process(channelVal));  // applying band pass filter
-    channelSum += channelVal * channelVal;                        // scaling the data
-    EEGuv = (sqrt(abs(channelSum / SAMPLE_RATE)) * MICROVOLTS_PER_COUNT);
+    channelSum += channelVal * channelVal;                        // scaling the data    
   }
+  EEGuv = (sqrt(abs(channelSum / SAMPLE_RATE)) * MICROVOLTS_PER_COUNT);
+  int temp = EEGuv * DECIMALS;
+  Serial.println(temp);
   result = (EEGuv > CHANNEL_LOW);
   return result;
 }
