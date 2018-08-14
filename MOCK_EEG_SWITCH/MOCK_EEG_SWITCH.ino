@@ -10,7 +10,7 @@
 #define NOTCH_Q 4.0f            // sharp notch
 #define BP_Q 2.0f             // step slope
 #define PEAK_GAIN_DB 0.0f         // don't want any gain in banpass filter
-#define MICROVOLTS_PER_COUNT 0.02235174f  //
+#define MICROVOLTS_PER_COUNT 1.0f  // was 0.02235174f
 #define HP_CUTOFF 0.5f            // 
 #define NOTCH_FREQ 60.0f          // power line frequency
 #define TARGET_FREQUENCY 25.0f         // the frequency that to be detected
@@ -23,8 +23,11 @@
 #define DECIMALS 10000.0f
 
 // for Serial Read
-int rawSerial;
-int rawData=0;
+long rawSerial;
+long rawData=0;
+
+// for counting data per second (250cnt -> sampling rate at 250Hz)
+int dataCnt = 0;
 
 // for frequency detection
 bool frequencyMatch = false;
@@ -33,12 +36,13 @@ float channelPhase[SAMPLE_RATE] = {};    // 2d array to store channel data
 Biquad stopDC_filter = Biquad(bq_type_highpass, HP_CUTOFF / SAMPLE_RATE, FILTER_Q, PEAK_GAIN_DB);
 Biquad notch_filter = Biquad(bq_type_notch, NOTCH_FREQ / SAMPLE_RATE, NOTCH_Q, PEAK_GAIN_DB);
 Biquad AHP_bandpass_filter = Biquad(bq_type_bandpass, TARGET_FREQUENCY / SAMPLE_RATE, BP_Q, PEAK_GAIN_DB);
-//stopDC_filter.calcBiquad();
-//notch_filter.calcBiquad();
-//AHP_bandpass_filter.calcBiquad();
  
 void setup() {
   Serial.begin(115200);
+
+//  stopDC_filter.calcBiquad();
+//  notch_filter.calcBiquad();
+//  AHP_bandpass_filter.calcBiquad();
 
   pinMode(RELAY_PIN, OUTPUT);
   
@@ -53,7 +57,6 @@ void setup() {
 }
  
 void loop() {
-  int dataCnt = 0;
   while(dataCnt < SAMPLE_RATE){
     // read serial-data, if available
     if (Serial.available()) {
@@ -61,28 +64,28 @@ void loop() {
       dataCnt ++;
     }
   }
+  dataCnt = 0;
   if (frequencyMatched()){
     digitalWrite(RELAY_PIN, HIGH);
-    delay(2000);
+    delay(1000);
+    digitalWrite(RELAY_PIN, LOW);
   }
 }
 
-void myRead(int *rS, int *rD, float *channelData){
+void myRead(long *rS, long *rD, float *channelData){
   *rS = Serial.read();
   // handle digits
   if ((*rS >= '0') && (*rS <= '9')) {
     *rD = 10 * *rD + *rS - '0';
   }
   // handle delimiter
-  else{
+  else if ((*rS == 'n') || (*rS == 'p')){
     if (*rS == 'n'){
       *rD *= -1;
     }
-    if (*rD !=0){
-      //Serial.println(*rD);
-      *channelData = *rD/DECIMALS;
-      //Serial.println(*channelData * DECIMALS);
-    } 
+    //Serial.println(*rD);
+    *channelData = *rD / DECIMALS;
+    // Serial.println((long)(*channelData * DECIMALS));
     *rD = 0;
   }
 }
@@ -108,7 +111,7 @@ bool frequencyMatched(){
     channelSum += channelVal * channelVal;                        // scaling the data    
   }
   EEGuv = (sqrt(abs(channelSum / SAMPLE_RATE)) * MICROVOLTS_PER_COUNT);
-  int temp = EEGuv * DECIMALS;
+  long temp = (long)(EEGuv * DECIMALS);
   Serial.println(temp);
   result = (EEGuv > CHANNEL_LOW);
   return result;

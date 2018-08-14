@@ -5,8 +5,8 @@ Serial mySerial;
 final String PORT = "COM5";
 final int BAUDRATE = 115200;
 
-final String FILE_PATH = "C:/Fake_Data_Test/fakeSignal.txt";
-final String FILTERED_DATA_PATH = "C:/Fake_Data_Test/filteredFakeSignal.txt";
+final String FILE_PATH = "C:/Fake_Data_Test/sine10mix200.txt";
+final String FILTERED_DATA_PATH = "C:/Fake_Data_Test/filtered10mix200.txt";
 
 final int DECIMALS = 10000;
 
@@ -15,7 +15,7 @@ String dataList[] = new String[9];
 BufferedReader myReader;
 PrintWriter myWriter;
 String myLine;
-long lineCnt = 500;
+long lineCnt = 15000;
  
  
 void setup() {
