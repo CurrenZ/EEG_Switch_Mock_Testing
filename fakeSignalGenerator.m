@@ -10,9 +10,10 @@ mSignalFT = fft(mSignal);
 f = 0:250/length(mSignalFT):250;
 f = f';
 fakeSignalFT = mSignalFT;
-fakeSignalFT(51) = 15*fakeSignalFT(51); % where freq = 25Hz
-fakeSignalFT(102) = 30*fakeSignalFT(102); %where freq = 50Hz
-fakeSignalFT(162) = 1.2*fakeSignalFT(102); %where freq = 80Hz
+fakeSignalFT = real(fakeSignalFT);
+fakeSignalFT(51) = 2500; % where freq = 25Hz
+fakeSignalFT(102) = 2500; %where freq = 50Hz
+fakeSignalFT(162) = 2500; %where freq = 80Hz
 fakeSignal = ifft(fakeSignalFT);
 fakeSignal = real(fakeSignal);
 
