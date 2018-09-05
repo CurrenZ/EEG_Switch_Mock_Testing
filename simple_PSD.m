@@ -1,4 +1,4 @@
-SignalID = fopen('filteredFakeSignal.txt', 'r');
+SignalID = fopen('meditation.txt', 'r');
 formatSpec = '%f';
 Signal = fscanf(SignalID, formatSpec);
 

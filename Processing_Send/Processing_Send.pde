@@ -5,8 +5,8 @@ Serial mySerial;
 final String PORT = "COM5";
 final int BAUDRATE = 115200;
 
-final String FILE_PATH = "C:/Fake_Data_Test/fakeSignal.txt";
-final String FILTERED_DATA_PATH = "C:/Fake_Data_Test/filteredFakeSignal.txt";
+final String FILE_PATH = "C:/Fake_Data_Test/sine25.txt";
+final String FILTERED_DATA_PATH = "C:/Fake_Data_Test/filteredSine25.txt";
 
 final int DECIMALS = 10000;
 
@@ -25,10 +25,10 @@ void setup() {
 }
  
 void draw() {
-  if (readDataLine()){
+    if (readDataLine()){
     float lineFloat = float(myLine);
     int temp = (int)(lineFloat * DECIMALS);
-    println("Sent: "+ lineFloat);
+    //println("Sent: "+ lineFloat);
     mySerial.write(Integer.toString(temp));
     // write any charcter that marks the end of a number
     //mySerial.write('e');

@@ -1,0 +1,16 @@
+import processing.serial.*;
+import java.io.*;
+
+final String FILE_PATH = "C:/Fake_Data_Test/";
+final String FILE_NAME = "";
+
+final String FILE_ORIG = FILE_PATH + FILE_NAME + ".txt";
+final String FILE_TRMD = FILE_PATH + FILE_NAME + "_TRMD.txt";
+
+BufferedReader myReader;
+PrintWriter myWriter;
+
+void setup(){
+  myReader = createReader(FILE_ORIG);
+  myWriter = createWriter(FILE_TRMD);
+}

@@ -1,4 +1,4 @@
-mSignalID = fopen('meditation.txt', 'r');
+mSignalID = fopen('meditation128.txt', 'r');
 
 formatSpec = '%f';
 
@@ -10,12 +10,16 @@ mSignalFT = fft(mSignal);
 f = 0:250/length(mSignalFT):250;
 f = f';
 fakeSignalFT = mSignalFT;
-fakeSignalFT = real(fakeSignalFT);
-fakeSignalFT(51) = 2500; % where freq = 25Hz
-fakeSignalFT(102) = 2500; %where freq = 50Hz
-fakeSignalFT(162) = 2500; %where freq = 80Hz
+%fakeSignalFT = abs(fakeSignalFT);
+fakeSignalFT(14) = 100.*fakeSignalFT(14);
+%fakeSignalFT(14) = 800; % where freq = 25Hz
+%fakeSignalFT(102) = 2500; %where freq = 50Hz
+%fakeSignalFT(162) = 2500; %where freq = 80Hz
 fakeSignal = ifft(fakeSignalFT);
-fakeSignal = real(fakeSignal);
+fakefakeFT = fft(fakeSignal);
+fakeSignal = abs(fakeSignal);
+fakefakeFT = abs(fakefakeFT);
+
 
 [meditationPSD, meditationFreq] = powerSpectrum(mSignal, 250);
 [fakePSD, fakeFreq] = powerSpectrum(fakeSignal, 250);

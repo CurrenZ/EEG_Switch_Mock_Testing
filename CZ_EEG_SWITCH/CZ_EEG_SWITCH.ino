@@ -19,7 +19,6 @@ const float QUALITY_FACTOR = 1.0f;
 const float INITIAL_VALUE = 0.0f;
 
 float inVal = 0.0f;
-float hold = 99999.0f;
 
 // creating a low pass filter
 FilterOnePole HPF(HIGHPASS, HP_FREQUENCY, INITIAL_VALUE);
@@ -59,9 +58,9 @@ void myRead(long *rS, long *rD, float *channelData){
     }
     //Serial.println(*rD);
     *channelData = *rD / DECIMALS;
-    float outVal = HPF.input(*channelData);
-    outVal = LPF.input(outVal);
-    long temp = (long)(outVal * DECIMALS);
+//    float outVal = HPF.input(*channelData);
+//    outVal = LPF.input(outVal);
+    long temp = (long)(*channelData * DECIMALS);
     Serial.println(temp);
     *rD = 0;
   }
